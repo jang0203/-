@@ -78,6 +78,55 @@ function draw() {
     if(fluxData.length > maxDataPoints) fluxData.shift();
     if(emfData.length > maxDataPoints) emfData.shift();
 
+    const grad = ctx.createRadialGradient(magnetX, magnetY, 10, magnetX, magnetY, 200);
+    grad.addColorStop(0, `rgba(0, 150, 255, ${0.4 * B})`);
+    grad.addColorStop(1, 'rgba(0, 150, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(magnetX, magnetY, 200, 0, 2 * Math.PI);
+    ctx.fill();
+
+    // --- 자기장 방향 화살표 ---
+    const fieldSpacing = 40;  // 화살표 간격
+    for (let x = coilX - 200; x <= coilX + 200; x += fieldSpacing) {
+        for (let y = coilY - 120; y <= coilY + 120; y += fieldSpacing) {
+          const dx = x - magnetX;
+          const dy = y - magnetY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+      
+          if (dist < 30 || dist > 200) continue; // 너무 중심이거나 너무 멀면 생략
+      
+          // 자석의 진동 위치에 따라 방향 반전 (자기장 극성 변화)
+          const direction = Math.sign(Math.sin(t * v)) || 1;
+          
+          // 자석에서 바깥으로 향하는 방향 (단위벡터)
+          const angle = Math.atan2(dy, dx) * direction;
+      
+          const Bstrength = B * Math.exp(-dist / 100); // 거리 멀수록 약해짐
+          const length = 15 * Bstrength; // 화살표 길이 비례
+      
+          const x1 = x - Math.cos(angle) * length / 2;
+          const y1 = y - Math.sin(angle) * length / 2;
+          const x2 = x + Math.cos(angle) * length / 2;
+          const y2 = y + Math.sin(angle) * length / 2;
+      
+          // 선 그리기
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.strokeStyle = `rgba(0, 150, 255, ${0.4 * Bstrength})`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+      
+          // 화살표 머리 (끝부분에 작은 삼각형)
+          ctx.beginPath();
+          ctx.moveTo(x2, y2);
+          ctx.lineTo(x2 - 4 * Math.cos(angle - 0.4), y2 - 4 * Math.sin(angle - 0.4));
+          ctx.lineTo(x2 - 4 * Math.cos(angle + 0.4), y2 - 4 * Math.sin(angle + 0.4));
+          ctx.fillStyle = `rgba(0, 150, 255, ${0.5 * Bstrength})`;
+          ctx.fill();
+        }
+    }
     // --- 코일 & 자석 ---
     const magnetWidth = 40;
     const magnetHeight = 30;
